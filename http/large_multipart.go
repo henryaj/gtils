@@ -14,7 +14,7 @@ var LargeMultiPartUpload = func(conn ConnAuth, paramName, filename string, fileS
 	ms := multipartstreamer.New()
 
 	if params != nil {
-		lo.G.Debug("adding params for request: ", params)
+		lo.G.Debug("adding params for request")
 
 		if err = ms.WriteFields(params); err != nil {
 			lo.G.Error("writefields error: ", err)
