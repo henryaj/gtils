@@ -65,7 +65,7 @@ func (s *MysqlDump) Import(lfile io.Reader) (err error) {
 //Dump - will dump a mysql to the given writer
 func (s *MysqlDump) Dump(dest io.Writer) (err error) {
 	err = s.Caller.Execute(dest, s.getDumpCommand())
-	lo.G.Debug("mysqldump Dump called: ", s.getDumpCommand(), err)
+	lo.G.Debug("mysqldump command called")
 	return
 }
 
