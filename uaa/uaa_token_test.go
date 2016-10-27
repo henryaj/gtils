@@ -12,16 +12,54 @@ import (
 	"github.com/pivotalservices/gtils/uaa"
 )
 
-var _ = Describe("given a GetToken() function", func() {
-	Context("when called with valid uaa target information", func() {
+var _ = Describe("GetToken()", func() {
+	Context("with grant type password", func() {
 		var token string
 		var err error
 		var controlToken = "12345937635"
 		var server *ghttp.Server
 
 		BeforeEach(func() {
-			server = NewTestServer(ghttp.NewTLSServer(), controlToken)
-			token, err = uaa.GetToken(server.URL()+"/uaa", "fakeuser", "fakepass", "opsman", "")
+			expectedFormParams := url.Values{
+				"grant_type":    {"password"},
+				"response_type": {"token"},
+				"username":      {"fakeuser"},
+				"password":      {"fakepass"},
+				"client_id":     {"opsman"},
+				"client_secret": {""},
+			}
+			server = NewTestServer(ghttp.NewTLSServer(), controlToken, expectedFormParams)
+			token, err = uaa.GetToken(server.URL()+"/uaa", "fakeuser", "fakepass", "opsman", "", "password")
+		})
+
+		AfterEach(func() {
+			server.Close()
+		})
+
+		It("Then it should return a valid token", func() {
+			Ω(err).ShouldNot(HaveOccurred())
+			Ω(token).ShouldNot(BeEmpty())
+			Ω(token).Should(Equal(controlToken))
+		})
+	})
+
+	Context("with grant type client_credentials", func() {
+		var token string
+		var err error
+		var controlToken = "12345937635"
+		var server *ghttp.Server
+
+		BeforeEach(func() {
+			expectedFormParams := url.Values{
+				"grant_type":    {"client_credentials"},
+				"response_type": {"token"},
+				"username":      {""},
+				"password":      {""},
+				"client_id":     {"client456"},
+				"client_secret": {"clientsecret"},
+			}
+			server = NewTestServer(ghttp.NewTLSServer(), controlToken, expectedFormParams)
+			token, err = uaa.GetToken(server.URL()+"/uaa", "", "", "client456", "clientsecret", "client_credentials")
 		})
 
 		AfterEach(func() {
@@ -42,7 +80,7 @@ var _ = Describe("given a GetToken() function", func() {
 
 		BeforeEach(func() {
 			server = NewErrorTestServer(ghttp.NewTLSServer())
-			token, err = uaa.GetToken(server.URL()+"/uaa", "fakeuser", "fakepass", "opsman", "")
+			token, err = uaa.GetToken(server.URL()+"/uaa", "fakeuser", "fakepass", "opsman", "", "password")
 		})
 
 		AfterEach(func() {
@@ -64,19 +102,11 @@ func NewErrorTestServer(server *ghttp.Server) *ghttp.Server {
 	return server
 }
 
-func NewTestServer(server *ghttp.Server, token string) *ghttp.Server {
-	expectedFormParams := url.Values{
-		"grant_type":    {"password"},
-		"response_type": {"token"},
-		"username":      {"fakeuser"},
-		"password":      {"fakepass"},
-		"client_id":     {"opsman"},
-		"client_secret": {""},
-	}
+func NewTestServer(server *ghttp.Server, token string, expectedParams url.Values) *ghttp.Server {
 	tokenJson := getFakeToken("./fixtures/token_response.json", token, "", "")
 
 	successTokenHandler := ghttp.RespondWith(http.StatusOK, tokenJson)
-	successFormHandler := ghttp.VerifyForm(expectedFormParams)
+	successFormHandler := ghttp.VerifyForm(expectedParams)
 
 	server.AppendHandlers(
 		ghttp.CombineHandlers(

@@ -11,10 +11,10 @@ import (
 )
 
 //GetToken -
-func GetToken(uaaURL, opsManagerUsername, opsManagerPassword, clientID, clientSecret string) (token string, err error) {
+func GetToken(uaaURL, opsManagerUsername, opsManagerPassword, clientID, clientSecret, grantType string) (token string, err error) {
 	var res *http.Response
 	params := url.Values{
-		"grant_type":    {"password"},
+		"grant_type":    {grantType},
 		"response_type": {"token"},
 		"username":      {opsManagerUsername},
 		"password":      {opsManagerPassword},
