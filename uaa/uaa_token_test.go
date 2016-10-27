@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -64,10 +65,24 @@ func NewErrorTestServer(server *ghttp.Server) *ghttp.Server {
 }
 
 func NewTestServer(server *ghttp.Server, token string) *ghttp.Server {
+	expectedFormParams := url.Values{
+		"grant_type":    {"password"},
+		"response_type": {"token"},
+		"username":      {"fakeuser"},
+		"password":      {"fakepass"},
+		"client_id":     {"opsman"},
+		"client_secret": {""},
+	}
 	tokenJson := getFakeToken("./fixtures/token_response.json", token, "", "")
+
 	successTokenHandler := ghttp.RespondWith(http.StatusOK, tokenJson)
+	successFormHandler := ghttp.VerifyForm(expectedFormParams)
+
 	server.AppendHandlers(
-		successTokenHandler,
+		ghttp.CombineHandlers(
+			successFormHandler,
+			successTokenHandler,
+		),
 	)
 	return server
 }
